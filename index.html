@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Habit Audit — Habitry</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --ink: #0F0E17;
+    --paper: #F5F2EC;
+    --accent: #C8414B;
+    --accent-soft: #F5E6E7;
+    --purple: #534AB7;
+    --purple-soft: #EEEDFE;
+    --gold: #C9952A;
+    --gold-soft: #FEF5E4;
+    --muted: #7A7885;
+    --border: #DDD9D0;
+    --white: #FFFFFF;
+    --green: #2A7A5C;
+    --green-soft: #E5F5EF;
+  }
+  body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(--ink); min-height: 100vh; }
+
+  /* LANDING */
+  .landing { min-height: 100vh; display: flex; flex-direction: column; }
+  .landing-header { padding: 20px 28px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); }
+  .logo { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 600; color: var(--ink); }
+  .logo sup { font-size: 10px; font-weight: 400; color: var(--muted); font-family: 'DM Sans', sans-serif; }
+  .landing-body { flex: 1; max-width: 520px; margin: 0 auto; padding: 48px 24px 60px; }
+  .eyebrow { font-size: 11px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 14px; }
+  .landing-title { font-family: 'Fraunces', serif; font-size: clamp(32px, 8vw, 50px); font-weight: 300; line-height: 1.1; margin-bottom: 10px; }
+  .landing-title em { font-style: italic; color: var(--accent); }
+  .landing-sub { font-size: 15px; color: var(--muted); line-height: 1.7; margin-bottom: 32px; }
+  .stages-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 28px; }
+  .stage-pill { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 11px 14px; display: flex; align-items: center; gap: 10px; }
+  .stage-num { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; flex-shrink: 0; }
+  .stage-pill:nth-child(1) .stage-num { background: #FAECEC; color: var(--accent); }
+  .stage-pill:nth-child(2) .stage-num { background: var(--purple-soft); color: var(--purple); }
+  .stage-pill:nth-child(3) .stage-num { background: var(--green-soft); color: var(--green); }
+  .stage-pill:nth-child(4) .stage-num { background: var(--gold-soft); color: var(--gold); }
+  .stage-text { font-size: 12px; font-weight: 500; color: var(--ink); }
+  .time-note { font-size: 12px; color: var(--muted); margin-bottom: 24px; }
+  .start-btn { width: 100%; background: var(--ink); color: var(--paper); border: none; border-radius: 14px; padding: 18px 24px; font-family: 'Fraunces', serif; font-size: 20px; font-weight: 300; font-style: italic; cursor: pointer; transition: all 0.2s; margin-bottom: 14px; }
+  .start-btn:hover { background: var(--accent); transform: translateY(-1px); }
+  .rule-note { background: var(--white); border-left: 3px solid var(--accent); border-radius: 0 10px 10px 0; padding: 12px 16px; font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+  /* CHAT */
+  .chat-screen { display: none; flex-direction: column; height: 100vh; max-width: 600px; margin: 0 auto; }
+  .chat-screen.show { display: flex; }
+  .landing.hide { display: none; }
+
+  .chat-header { padding: 12px 18px; border-bottom: 1px solid var(--border); background: var(--white); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .chat-logo { font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--ink); }
+  .stage-indicator { display: flex; align-items: center; gap: 4px; }
+  .stage-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: all 0.3s; }
+  .stage-dot.done { background: var(--ink); }
+  .stage-dot.active { background: var(--accent); transform: scale(1.2); }
+  .stage-label-text { font-size: 11px; color: var(--muted); font-weight: 500; }
+  .restart-btn { background: transparent; border: 1px solid var(--border); border-radius: 8px; padding: 4px 12px; font-size: 12px; color: var(--muted); cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.2s; }
+  .restart-btn:hover { border-color: var(--muted); color: var(--ink); }
+
+  .messages { flex: 1; overflow-y: auto; padding: 18px 16px 8px; display: flex; flex-direction: column; gap: 12px; scroll-behavior: smooth; }
+  .messages::-webkit-scrollbar { width: 3px; }
+  .messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  /* MESSAGE */
+  .message { display: flex; gap: 8px; align-items: flex-end; animation: fadeUp 0.25s ease; }
+  .message.user { flex-direction: row-reverse; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+  .avatar { width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+  .avatar.ai { background: var(--ink); color: var(--paper); font-family: 'Fraunces', serif; font-style: italic; }
+  .avatar.user { background: var(--purple-soft); color: var(--purple); font-weight: 500; }
+
+  .bubble { max-width: 78%; padding: 10px 14px; border-radius: 18px; font-size: 14px; line-height: 1.65; }
+  .message.ai .bubble { background: var(--white); color: var(--ink); border-bottom-left-radius: 4px; border: 1px solid var(--border); }
+  .message.user .bubble { background: var(--ink); color: var(--paper); border-bottom-right-radius: 4px; }
+
+  /* CHOICES */
+  .choices-wrap { display: flex; flex-direction: column; gap: 7px; margin-top: 4px; max-width: 86%; margin-left: 36px; }
+  .choice-btn {
+    background: var(--white); border: 1px solid var(--border); border-radius: 12px;
+    padding: 10px 14px; font-size: 13px; color: var(--ink); text-align: left;
+    cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.15s;
+    animation: fadeUp 0.25s ease;
+  }
+  .choice-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+  .choice-btn.selected { border-color: var(--ink); background: var(--ink); color: var(--paper); }
+
+  /* SCORE CARD */
+  .score-card { background: var(--white); border: 1px solid var(--border); border-radius: 16px; padding: 16px; max-width: 86%; margin-left: 36px; animation: fadeUp 0.3s ease; }
+  .score-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--accent); margin-bottom: 10px; }
+  .score-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .score-label { font-size: 12px; color: var(--muted); flex: 1; }
+  .score-bar-wrap { flex: 2; height: 6px; background: var(--border); border-radius: 4px; overflow: hidden; }
+  .score-bar { height: 100%; border-radius: 4px; background: var(--accent); transition: width 0.8s ease; }
+  .score-num { font-size: 12px; font-weight: 500; color: var(--ink); min-width: 28px; text-align: right; }
+  .score-total { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 600; color: var(--ink); margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+  .score-total span { font-size: 13px; font-weight: 400; color: var(--muted); font-family: 'DM Sans', sans-serif; }
+
+  /* REPORT */
+  .report-card { background: var(--white); border: 1px solid var(--border); border-radius: 16px; padding: 18px; max-width: 90%; margin-left: 36px; animation: fadeUp 0.3s ease; font-size: 13px; line-height: 1.75; }
+  .report-section { margin-bottom: 14px; }
+  .report-section:last-child { margin-bottom: 0; }
+  .report-tag { font-size: 10px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
+  .report-text { color: var(--ink); white-space: pre-wrap; }
+
+  /* TYPING */
+  .typing-indicator { display: flex; gap: 8px; align-items: flex-end; }
+  .typing-bubble { background: var(--white); border: 1px solid var(--border); border-radius: 18px; border-bottom-left-radius: 4px; padding: 10px 14px; display: flex; gap: 4px; align-items: center; }
+  .typing-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--muted); animation: bounce 1.2s infinite; }
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-4px); } }
+
+  /* INPUT */
+  .input-area { padding: 12px 14px; border-top: 1px solid var(--border); background: var(--white); flex-shrink: 0; }
+  .input-wrap { display: flex; gap: 8px; align-items: flex-end; background: var(--paper); border: 1px solid var(--border); border-radius: 14px; padding: 8px 8px 8px 14px; transition: border-color 0.2s; }
+  .input-wrap:focus-within { border-color: var(--ink); }
+  .user-input { flex: 1; border: none; background: transparent; font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--ink); outline: none; resize: none; line-height: 1.5; max-height: 100px; min-height: 22px; }
+  .user-input::placeholder { color: var(--muted); }
+  .send-btn { width: 34px; height: 34px; border-radius: 9px; background: var(--ink); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.2s; }
+  .send-btn:hover { background: var(--accent); }
+  .send-btn:disabled { background: var(--border); cursor: default; }
+  .input-hint { font-size: 10px; color: var(--muted); margin-top: 6px; text-align: center; }
+
+  /* LEAD CAPTURE */
+  .lead-card { background: var(--white); border: 1.5px solid var(--accent); border-radius: 16px; padding: 20px; margin: 8px 0 8px 36px; max-width: 88%; animation: fadeUp 0.4s ease; }
+  .lead-question { font-family: 'Fraunces', serif; font-size: 16px; font-weight: 400; color: var(--ink); margin-bottom: 6px; }
+  .lead-sub { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 16px; }
+  .lead-community { font-size: 12px; color: var(--purple); margin-top: 10px; line-height: 1.5; }
+  .lead-fields { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+  .lead-field-wrap { display: flex; align-items: center; gap: 8px; background: var(--paper); border: 1px solid var(--border); border-radius: 10px; padding: 9px 12px; transition: border-color 0.2s; }
+  .lead-field-wrap:focus-within { border-color: var(--accent); }
+  .lead-field-icon { font-size: 14px; flex-shrink: 0; }
+  .lead-field { flex: 1; border: none; background: transparent; font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--ink); outline: none; }
+  .lead-field::placeholder { color: var(--muted); }
+  .lead-actions { display: flex; flex-direction: column; gap: 6px; }
+  .lead-submit-btn { background: var(--ink); color: var(--paper); border: none; border-radius: 10px; padding: 11px 16px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; transition: background 0.2s; text-align: center; }
+  .lead-submit-btn:hover { background: var(--accent); }
+  .lead-skip-btn { background: transparent; color: var(--muted); border: none; font-family: 'DM Sans', sans-serif; font-size: 12px; cursor: pointer; padding: 6px; text-decoration: underline; text-underline-offset: 2px; }
+  .lead-skip-btn:hover { color: var(--ink); }
+</style>
+</head>
+<body>
+
+<!-- LANDING -->
+<div class="landing" id="landing">
+  <div class="landing-header">
+    <div class="logo">habitry<sup>™</sup></div>
+    <span style="font-size:12px;color:var(--muted)">AI Edition</span>
+  </div>
+  <div class="landing-body">
+    <p class="eyebrow">the habit audit</p>
+    <h1 class="landing-title">find out why<br>it <em>broke.</em></h1>
+    <p class="landing-sub">a live AI session. it asks, you answer, it tells you exactly what went wrong — and how to fix it.</p>
+    <div class="stages-row">
+      <div class="stage-pill"><div class="stage-num">1</div><span class="stage-text">Setup</span></div>
+      <div class="stage-pill"><div class="stage-num">2</div><span class="stage-text">Diagnosis</span></div>
+      <div class="stage-pill"><div class="stage-num">3</div><span class="stage-text">Real Reason Finder</span></div>
+      <div class="stage-pill"><div class="stage-num">4</div><span class="stage-text">Your Report</span></div>
+    </div>
+    <p class="time-note">⏱ 30–45 mins &nbsp;·&nbsp; pick one habit &nbsp;·&nbsp; be honest</p>
+    <button class="start-btn" onclick="startAudit()">start my audit →</button>
+    <div class="rule-note"><strong>one rule:</strong> don't filter yourself. failure is the most accurate data you have.</div>
+  </div>
+</div>
+
+<!-- CHAT -->
+<div class="chat-screen" id="chatScreen">
+  <div class="chat-header">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="chat-logo">habitry</div>
+      <span class="stage-label-text" id="stageLabel">Stage 1 — Setup</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div class="stage-indicator">
+        <div class="stage-dot active" id="dot1"></div>
+        <div class="stage-dot" id="dot2"></div>
+        <div class="stage-dot" id="dot3"></div>
+        <div class="stage-dot" id="dot4"></div>
+      </div>
+      <button class="restart-btn" onclick="restartAudit()">restart</button>
+    </div>
+  </div>
+
+  <div class="messages" id="messages"></div>
+
+  <div class="input-area">
+    <div class="input-wrap">
+      <textarea class="user-input" id="userInput" placeholder="type here or pick an option above..." rows="1"
+        onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+      <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M14 8L2 2l2.5 6L2 14l12-6z" fill="white"/></svg>
+      </button>
+    </div>
+    <p class="input-hint">enter to send · shift+enter for new line</p>
+  </div>
+</div>
+
+<script>
+const SYSTEM_PROMPT = `You are a habit coach running a structured Habit Audit for Habitry. You help people understand why their habit broke — then give them a plan to rebuild it.
+
+CRITICAL FORMATTING RULES — follow these exactly:
+1. Keep every message SHORT — max 2 sentences of text before choices.
+2. After your short message, provide CHOICES using this exact JSON format:
+   CHOICES: ["option 1", "option 2", "option 3", "other — i'll type it"]
+3. Always include "other — i'll type it" as the last choice.
+4. NEVER use clinical scale labels like "1–2 (very low)" or "3–4 (low)". Instead write choices as real human reactions — see examples below.
+5. Never write long paragraphs. One short thought, then choices.
+6. Only Stage 4 outputs can be longer — use clear bullet headers.
+
+HUMAN CHOICE EXAMPLES (use this style for all scoring questions):
+Instead of scale labels, write what the person would actually say or feel:
+- Trigger: ["nope, no trigger at all", "kind of — but it was inconsistent", "yes, i had one but ignored it", "yes and it worked most of the time", "other — i'll type it"]
+- Environment: ["my space worked against me", "it wasn't set up at all", "it was okay but not ideal", "yes, everything was ready", "other — i'll type it"]
+- Identity: ["it never felt like me", "i wanted it to feel like me but it didn't", "sometimes yes, sometimes no", "yes, it felt natural", "other — i'll type it"]
+- Recovery: ["i had no plan for bad days", "i told myself i'd restart but never did", "i had a rough plan but didn't use it", "yes, i had a bounce-back rule", "other — i'll type it"]
+- Motivation: ["100% — if i wasn't feeling it, i skipped", "mostly yes — i needed to be in the mood", "sometimes, but i had some discipline too", "not really — i had systems", "other — i'll type it"]
+
+THE 4 STAGES:
+
+STAGE 1 — SETUP:
+- One warm sentence. Ask which habit they want to audit.
+- CHOICES: ["exercise / movement", "eating habits", "sleep routine", "meditation / mindfulness", "journaling", "drinking water", "reading", "other — i'll type it"]
+
+STAGE 2 — DIAGNOSIS (Friction Audit):
+Score 5 areas, one at a time. For each:
+- Ask one short, conversational question (not clinical)
+- Give 4 human answer choices + "other — i'll type it"
+- After they pick, reflect in ONE short line, then move immediately to next area
+
+Areas:
+1. Trigger Design — did it have a clear, consistent cue?
+2. Environment Setup — was the space set up to make it easy?
+3. Identity Alignment — did it feel like "something I do"?
+4. Recovery Planning — what happened when you missed a day?
+5. Motivation Dependency — did it need you to feel motivated first?
+
+After all 5: list scores simply (e.g. "trigger: 2 · environment: 6 · identity: 4 · recovery: 1 · motivation: 3 = 16/50"), name the weakest in one line. Then ask if ready to go deeper.
+CHOICES: ["yes, let's go deeper", "explain the weakest area more"]
+
+STAGE 3 — REAL REASON FINDER:
+5 follow-up questions based on their specific answers. One at a time. Short + conversational + human choices.
+After all 5: 2 lines on why it failed. Ask if ready for report.
+CHOICES: ["yes, give me my report", "i want to add something first"]
+
+STAGE 4 — OUTPUTS:
+Generate 3 tight outputs:
+
+HABIT FAILURE REPORT
+• scores + total
+• why it failed: 2 lines
+
+REBUILD PLAN
+• new trigger: when [X] → i will [Y]
+• minimum version: one line
+• bounce-back rule: one line
+
+DAILY PROTOCOL
+• morning: one action (30 secs)
+• evening: one question to ask yourself
+• weekly: one thing to review
+
+Then ask: "what can you do in the next 24 hours to start?"
+CHOICES: ["start with the minimum version today", "set up my environment first", "tell one person about this plan", "other — i'll type it"]
+
+TONE: warm, casual, direct. lowercase where natural. no jargon. this is Habitry — consistency over intensity, systems over motivation.`;
+
+  let history = [];
+  let isLoading = false;
+  let currentStage = 1;
+  let scores = {};
+
+  const stageLabels = ['Stage 1 — Setup', 'Stage 2 — Diagnosis', 'Stage 3 — Real Reason Finder', 'Stage 4 — Your Report'];
+
+  function startAudit() {
+    document.getElementById('landing').classList.add('hide');
+    document.getElementById('chatScreen').classList.add('show');
+    init();
+  }
+
+  async function init() {
+    setLoading(true);
+    const response = await callClaude("Start the audit. Say hi and ask which habit they want to audit. Give the habit choices.");
+    history.push({ role: 'assistant', content: response });
+    renderAIMessage(response);
+    setLoading(false);
+  }
+
+  function parseChoices(text) {
+    const match = text.match(/CHOICES:\s*(\[[\s\S]*?\])/);
+    if (!match) return null;
+    try { return JSON.parse(match[1]); } catch { return null; }
+  }
+
+  function stripChoices(text) {
+    return text.replace(/CHOICES:\s*\[[\s\S]*?\]/g, '').trim();
+  }
+
+  function renderAIMessage(content, isReport = false) {
+    const msgs = document.getElementById('messages');
+    const typing = document.getElementById('typingIndicator');
+    if (typing) typing.remove();
+
+    const choices = parseChoices(content);
+    const text = stripChoices(content);
+
+    // Message bubble
+    if (text) {
+      const div = document.createElement('div');
+      div.className = 'message ai';
+      div.innerHTML = `
+        <div class="avatar ai">h</div>
+        <div class="bubble">${text.replace(/\n/g, '<br>')}</div>`;
+      msgs.appendChild(div);
+    }
+
+    // Choices
+    if (choices && choices.length) {
+      const wrap = document.createElement('div');
+      wrap.className = 'choices-wrap';
+      wrap.id = 'currentChoices';
+      choices.forEach(c => {
+        const btn = document.createElement('button');
+        btn.className = 'choice-btn';
+        btn.textContent = c;
+        btn.onclick = () => selectChoice(c, wrap);
+        wrap.appendChild(btn);
+      });
+      msgs.appendChild(wrap);
+    }
+
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function selectChoice(choice, wrap) {
+    // Disable all choices
+    wrap.querySelectorAll('.choice-btn').forEach(b => {
+      b.onclick = null;
+      b.style.opacity = '0.4';
+      b.style.cursor = 'default';
+    });
+
+    if (choice.toLowerCase().includes("other") || choice.toLowerCase().includes("i'll type")) {
+      document.getElementById('userInput').focus();
+      return;
+    }
+
+    addUserMessage(choice);
+    processUserInput(choice);
+  }
+
+  function addUserMessage(text) {
+    const msgs = document.getElementById('messages');
+    const div = document.createElement('div');
+    div.className = 'message user';
+    div.innerHTML = `
+      <div class="avatar user">me</div>
+      <div class="bubble">${text}</div>`;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  async function sendMessage() {
+    const input = document.getElementById('userInput');
+    const text = input.value.trim();
+    if (!text || isLoading) return;
+    input.value = '';
+    autoResize(input);
+
+    // Disable current choices if any
+    const choices = document.getElementById('currentChoices');
+    if (choices) {
+      choices.querySelectorAll('.choice-btn').forEach(b => {
+        b.onclick = null; b.style.opacity = '0.4'; b.style.cursor = 'default';
+      });
+    }
+
+    addUserMessage(text);
+    await processUserInput(text);
+  }
+
+  async function processUserInput(text) {
+    history.push({ role: 'user', content: text });
+    setLoading(true);
+    showTyping();
+    const response = await callClaude(text);
+    history.push({ role: 'assistant', content: response });
+    detectStage(response);
+    renderAIMessage(response);
+    setLoading(false);
+  }
+
+  async function callClaude(userMessage) {
+    try {
+      const messages = history.length === 0
+        ? [{ role: 'user', content: userMessage }]
+        : history.slice(-20); // keep last 20 messages for context
+
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          system: SYSTEM_PROMPT,
+          messages: messages
+        })
+      });
+      const data = await res.json();
+      return data.content?.[0]?.text || "something went wrong. try again.";
+    } catch {
+      return "connection issue — please try again.";
+    }
+  }
+
+  function showTyping() {
+    const msgs = document.getElementById('messages');
+    const div = document.createElement('div');
+    div.className = 'typing-indicator';
+    div.id = 'typingIndicator';
+    div.innerHTML = `
+      <div class="avatar ai">h</div>
+      <div class="typing-bubble">
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+      </div>`;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  let leadCaptureShown = false;
+
+  function detectStage(response) {
+    const lower = response.toLowerCase();
+    let stage = currentStage;
+    if (lower.includes('trigger design') || lower.includes('friction audit') || lower.includes('score')) stage = Math.max(stage, 2);
+    if ((lower.includes('follow-up') || lower.includes('go deeper') || lower.includes('real reason')) && stage >= 2) stage = Math.max(stage, 3);
+    if (lower.includes('habit failure report') || lower.includes('rebuild plan') || lower.includes('daily protocol')) {
+      stage = 4;
+      if (!leadCaptureShown) {
+        leadCaptureShown = true;
+        setTimeout(() => showLeadCapture(), 1400);
+      }
+    }
+    if (stage !== currentStage) { currentStage = stage; updateStageUI(stage); }
+  }
+
+  function showLeadCapture() {
+    const msgs = document.getElementById('messages');
+    const card = document.createElement('div');
+    card.className = 'lead-card';
+    card.id = 'leadCard';
+    card.innerHTML = `
+      <p class="lead-question">glad you made it through 🙌</p>
+      <p class="lead-sub">if you'd like us to check in on your rebuild next week — drop your details below. no spam, ever. completely optional.</p>
+      <div class="lead-fields">
+        <div class="lead-field-wrap">
+          <span class="lead-field-icon">📱</span>
+          <input class="lead-field" id="leadWhatsapp" type="tel" placeholder="whatsapp number (optional)" />
+        </div>
+        <div class="lead-field-wrap">
+          <span class="lead-field-icon">✉️</span>
+          <input class="lead-field" id="leadEmail" type="email" placeholder="email (optional)" />
+        </div>
+      </div>
+      <div class="lead-actions">
+        <button class="lead-submit-btn" onclick="submitLead()">yes, keep me accountable 🙌</button>
+        <button class="lead-skip-btn" onclick="skipLead()">no thanks, i'm good</button>
+      </div>
+    `;
+    msgs.appendChild(card);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function submitLead() {
+    const whatsapp = document.getElementById('leadWhatsapp')?.value.trim();
+    const email = document.getElementById('leadEmail')?.value.trim();
+    if (!whatsapp && !email) { skipLead(); return; }
+    // Log to console — replace with your backend endpoint or Google Form prefill URL
+    console.log('Habitry lead:', { whatsapp, email, timestamp: new Date().toISOString() });
+    document.getElementById('leadCard').innerHTML = `
+      <p class="lead-question">you're in 🎉</p>
+      <p class="lead-sub">we'll check in next week. in the meantime — go do that one thing you said you'd do in the next 24 hours.</p>
+      <p class="lead-community">and come join the habitry community if you haven't already — health is easier when you don't do it alone 💬</p>
+    `;
+    document.getElementById('messages').scrollTop = 99999;
+  }
+
+  function skipLead() {
+    document.getElementById('leadCard').innerHTML = `
+      <p class="lead-question">totally fine 👌</p>
+      <p class="lead-sub">go do that one thing in the next 24 hours. that's where it starts.</p>
+      <p class="lead-community">and come find us in the habitry community anytime 💬</p>
+    `;
+  }
+
+  function updateStageUI(stage) {
+    document.getElementById('stageLabel').textContent = stageLabels[stage - 1];
+    for (let i = 1; i <= 4; i++) {
+      const dot = document.getElementById(`dot${i}`);
+      dot.className = 'stage-dot';
+      if (i < stage) dot.classList.add('done');
+      else if (i === stage) dot.classList.add('active');
+    }
+  }
+
+  function setLoading(val) {
+    isLoading = val;
+    document.getElementById('sendBtn').disabled = val;
+    document.getElementById('userInput').disabled = val;
+  }
+
+  function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  }
+
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+  }
+
+  function restartAudit() {
+    if (!confirm('start over? current session will be lost.')) return;
+    history = []; currentStage = 1; leadCaptureShown = false;
+    document.getElementById('messages').innerHTML = '';
+    updateStageUI(1);
+    init();
+  }
+</script>
+</body>
+</html>
